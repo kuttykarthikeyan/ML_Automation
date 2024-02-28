@@ -5,7 +5,7 @@ import os
 if "no_of_csv" not in st.session_state:
     st.session_state.no_of_csv = 1
 
-# Identify target variable type
+# Identify target variable types have chaai
 def class_identification(column_name):
         if column_name in df.columns:
             unique_values_count = df[column_name].nunique()
