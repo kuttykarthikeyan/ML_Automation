@@ -4,23 +4,31 @@ import os
 
 if "no_of_csv" not in st.session_state:
     st.session_state.no_of_csv = 1
-
 # Initialize dictionaries to store information
 target_info = {}
 independent_info = {}
 selected_columns_info = []
 
 # Function to identify column types
-def identify_column_type(column_name, df):
+def identify_classification_regression(column_name, df):
     unique_values_count = df[column_name].nunique()
 
-    if unique_values_count < len(df) / 2 or df[column_name].dtype == "object":
-        return "Categorical"
+    if unique_values_count < len(df) / 2:
+        return "Classification"
     else:
-        return "Numerical"
+        return "Regression"
 
+#to check encoding is required or not
+def need_enconding_or_not(column_name,df):
+        try:
+            int(df.loc[:0,column_name])
+            return 'Not Needed'
+        except ValueError:
+            return 'Needed'
+     
 # Sidebar navigation
 with st.sidebar:
+    independent_info = {}
     st.title("Automated machine learning")
     choice = st.radio("Navigation", ["Upload", "Preprocessing", "Model Fitting", "Download"])
 
@@ -42,7 +50,7 @@ if choice == "Upload":
         target_variable = st.selectbox("Enter the target column", df.columns)
         
         # Store target variable type in dictionary
-        target_type = identify_column_type(target_variable, df)
+        target_type = identify_classification_regression(target_variable, df)
         target_info[target_variable] = target_type
 
         independent_df = df.drop(target_variable, axis=1)
@@ -51,15 +59,43 @@ if choice == "Upload":
         
         # Store independent variable types in dictionary
         for column in selected_columns:
-            column_type = identify_column_type(column, df)
+            column_type = identify_classification_regression(column, df)
             independent_info[column] = column_type
-            if column_type == "Categorical":
-                independent_info[f"{column}_encoding"] = "Needed"
+            if column_type == "Classification":
+                independent_info[f"{column}_encoding"] = need_enconding_or_not(column,df)
             else:
                 independent_info[f"{column}_encoding"] = "Not Needed"
 
         # Store selected columns
         selected_columns_info = selected_columns
+        
+        to_be_removed_columns=[]
+        
+        press=st.button('Click here to continue')
+        if press:
+            for i in df.columns:
+                if i not in selected_columns_info:
+                    to_be_removed_columns.append(i)
+            
+            df_2=df.drop(to_be_removed_columns,axis=1)
+            
+            regression_df=pd.DataFrame()
+            classification_df=pd.DataFrame()
+            
+            for i in df_2.columns:
+                if independent_info[i]=='Regression':
+                    regression_df[i]=df_2[i]
+                else:
+                    classification_df[i]=df_2[i]
+             
+            encoding_needed_df=pd.DataFrame()
+            encoding_not_needed_df=pd.DataFrame()
+            
+            for i in classification_df.columns:
+                if independent_info[i+'_encoding']=='Needed':
+                    encoding_needed_df[i]=classification_df[i]
+                else:
+                    encoding_not_needed_df[i]=classification_df[i]
 
 if choice == 'Preprocessing':
     # Store DataFrame
