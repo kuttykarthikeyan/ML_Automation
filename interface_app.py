@@ -5,35 +5,25 @@ import os
 if "no_of_csv" not in st.session_state:
     st.session_state.no_of_csv = 1
 
-# Identify target variable types
-# Identification feature type
-def class_identification(column_name):
-        if column_name in df.columns:
-            unique_values_count = df[column_name].nunique()
-            flag=0
-            try :
-                str(df.iloc[0:1,'column_name'])
-                flag=1
-            except ValueError:
-                flag=0
+# Initialize dictionaries to store information
+target_info = {}
+independent_info = {}
+selected_columns_info = []
 
-            if unique_values_count < len(df)/2:
-                #  suggesting classification
-                target_type = "Categorical"
-            elif flag==1:
-                target_type='Categorical'
-            
-            else:
-                #  assume regression
-                target_type = "Numerical"
-            
-            return target_type
-        
-#Navigation/Side bar
+# Function to identify column types
+def identify_column_type(column_name, df):
+    unique_values_count = df[column_name].nunique()
 
+    if unique_values_count < len(df) / 2 or df[column_name].dtype == "object":
+        return "Categorical"
+    else:
+        return "Numerical"
+
+# Sidebar navigation
 with st.sidebar:
     st.title("Automated machine learning")
-    choice=st.radio("Navigation",["Upload","Preprocessing","Model Fitting","Download"])
+    choice = st.radio("Navigation", ["Upload", "Preprocessing", "Model Fitting", "Download"])
+
 if choice == "Upload":
     st.title("ML Automation")
     uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
@@ -49,30 +39,39 @@ if choice == "Upload":
         df = pd.read_csv(uploaded_file)
         st.session_state.no_of_csv += 1
 
-        target_variable = st.selectbox("Enter the target column",df.columns)
+        target_variable = st.selectbox("Enter the target column", df.columns)
         
-        #current dataset name
-        idependent_df=df.drop(target_variable, axis=1)
+        # Store target variable type in dictionary
+        target_type = identify_column_type(target_variable, df)
+        target_info[target_variable] = target_type
+
+        independent_df = df.drop(target_variable, axis=1)
         
-        class_of_target=class_identification(target_variable)
-        if class_of_target=='Categorical':
-            st.write("A Classification Problem")
-        else:
-            st.write('A Regression Problem')
-        idependent_columns=st.multiselect("enter the columns",idependent_df.columns)
+        selected_columns = st.multiselect("Select independent columns", independent_df.columns)
         
-        class_type_of_coloumn=dict()
-        for names in idependent_columns:
-            #contains the type(Catogorical/Regression) of independent features
-            class_type_of_coloumn[names]=class_identification(names)
-            
-        print(class_type_of_coloumn)
-        
-if choice=='Preprocessing':
-    st.dataframe(df)
-    
-if choice=='Model Fitting':
-    pass
-if choice=='Download':
+        # Store independent variable types in dictionary
+        for column in selected_columns:
+            column_type = identify_column_type(column, df)
+            independent_info[column] = column_type
+            if column_type == "Categorical":
+                independent_info[f"{column}_encoding"] = "Needed"
+            else:
+                independent_info[f"{column}_encoding"] = "Not Needed"
+
+        # Store selected columns
+        selected_columns_info = selected_columns
+
+if choice == 'Preprocessing':
+    # Store DataFrame
+    preprocessing_df = df
+
+if choice == 'Model Fitting':
     pass
 
+if choice == 'Download':
+    pass
+
+# Print stored information
+print("Target variable info:", target_info)
+print("Independent variable info:", independent_info)
+print("Selected columns info:", selected_columns_info)
