@@ -1,6 +1,8 @@
+from socket import fromfd
 import streamlit as st
 import pandas as pd
 import os
+from preprocessing import *
 
 
 
@@ -132,29 +134,12 @@ if choice == "Upload":
             regression_df.to_csv("regression_data.csv",index=None)
             encoding_needed_df.to_csv("encoding_needed_data.csv",index=None)
             encoding_not_needed_df.to_csv("encoding_not_needed_data.csv",index=None)
-
 if choice == 'Preprocessing':
-    
-    #removal of null values in categorical datasets
-    if not encoding_needed_df.empty:
-        for i in encoding_needed_df.columns:
-            mode_value = encoding_needed_df[i].mode()[0]
-
-    # Fill the missing values with mode
-            encoding_needed_df[i].fillna(mode_value, inplace=True)
-            df_2[i]=encoding_needed_df[i]
-            
-    if not encoding_not_needed_df.empty:
-        for i in encoding_not_needed_df.columns:
-            mode_value = encoding_not_needed_df[i].mode()[0]
-
-    # Fill the missing values with mode
-            encoding_not_needed_df[i].fillna(mode_value, inplace=True)
-            df_2[i]=encoding_not_needed_df[i]
-        st.dataframe(encoding_not_needed_df)
-        
-    
-
+    df_2,regression_df,encoding_needed_df,encoding_not_needed_df=preprocessing(df_2,regression_df,encoding_needed_df,encoding_not_needed_df)
+    df_2.to_csv("independent_data.csv",index=None)
+    regression_df.to_csv("regression_data.csv",index=None)
+    encoding_needed_df.to_csv("encoding_needed_data.csv",index=None)
+    encoding_not_needed_df.to_csv("encoding_not_needed_data.csv",index=None)
 if choice == 'Model Fitting':
     pass
 
