@@ -1,8 +1,8 @@
-from socket import fromfd
 import streamlit as st
 import pandas as pd
 import os
 from preprocessing import *
+from machine_learning import *
 
 
 
@@ -10,7 +10,8 @@ def is_empty_file_size(filename):
 
   return os.path.getsize(filename) < 3
 
-
+if os.path.exists('target_data.csv'):
+    target_df=pd.read_csv('target_data.csv')
 
 if os.path.exists('independent_data.csv'):
     if not is_empty_file_size('independent_data.csv'):
@@ -59,7 +60,7 @@ def need_enconding_or_not(column_name,df):
             return 'Not Needed'
         except ValueError:
             return 'Needed'
-     
+
 # Sidebar navigation
 with st.sidebar:
     independent_info = {}
@@ -86,8 +87,10 @@ if choice == "Upload":
         # Store target variable type in dictionary
         target_type = identify_classification_regression(target_variable, df)
         target_info[target_variable] = target_type
-
+        
         independent_df = df.drop(target_variable, axis=1)
+        target_df=df[target_variable]
+        target_df.to_csv("target_data.csv",index=None)
         
         selected_columns = st.multiselect("Select independent columns", independent_df.columns)
         
@@ -136,12 +139,21 @@ if choice == "Upload":
             encoding_not_needed_df.to_csv("encoding_not_needed_data.csv",index=None)
 if choice == 'Preprocessing':
     df_2,regression_df,encoding_needed_df,encoding_not_needed_df=preprocessing(df_2,regression_df,encoding_needed_df,encoding_not_needed_df)
+    target_df=target_variable_preprocessing(target_df)
+    target_df.to_csv("target_data.csv",index=None)
     df_2.to_csv("independent_data.csv",index=None)
     regression_df.to_csv("regression_data.csv",index=None)
     encoding_needed_df.to_csv("encoding_needed_data.csv",index=None)
     encoding_not_needed_df.to_csv("encoding_not_needed_data.csv",index=None)
+    
+if os.path.exists('target_data.csv'):
+    target_df=pd.read_csv('target_data.csv')
+
+    
 if choice == 'Model Fitting':
-    pass
+    if os.path.exists('target_data.csv'):
+        target_df=pd.read_csv('target_data.csv')
+    machine_learning(df_2,target_df)
 
 if choice == 'Download':
     pass
